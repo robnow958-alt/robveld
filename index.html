@@ -1,0 +1,1253 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PROTOKÓŁ ZERO — Rob Veld</title>
+<link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #060608;
+    --deep: #0d0d10;
+    --surface: #111115;
+    --border: #1e1e24;
+    --muted: #3a3a44;
+    --dim: #6b6b78;
+    --text: #c8c8d4;
+    --bright: #e8e8f0;
+    --white: #f0f0f8;
+    --red: #e03030;
+    --red-dim: #7a1a1a;
+    --amber: #d4821a;
+    --mono: 'Share Tech Mono', monospace;
+    --display: 'Bebas Neue', sans-serif;
+    --body: 'DM Sans', sans-serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--text);
+    font-family: var(--body);
+    font-weight: 300;
+    font-size: 16px;
+    line-height: 1.7;
+    overflow-x: hidden;
+  }
+
+  /* SCANLINES OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0,0,0,0.08) 2px,
+      rgba(0,0,0,0.08) 4px
+    );
+    pointer-events: none;
+    z-index: 9999;
+    mix-blend-mode: multiply;
+  }
+
+  /* NOISE TEXTURE */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9998;
+  }
+
+  /* ─── NAV ─── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 40px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(6,6,8,0.92);
+    backdrop-filter: blur(12px);
+  }
+
+  .nav-logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.2em;
+    color: var(--dim);
+    text-transform: uppercase;
+  }
+
+  .nav-logo span {
+    color: var(--red);
+  }
+
+  .nav-status {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .status-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--red);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
+  /* ─── HERO ─── */
+  .hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 0 40px 80px;
+    position: relative;
+    overflow: hidden;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .hero-bg {
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 50% at 70% 40%, rgba(224,48,48,0.05) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 60% at 10% 80%, rgba(224,48,48,0.03) 0%, transparent 60%);
+  }
+
+  .hero-grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--border) 1px, transparent 1px),
+      linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size: 60px 60px;
+    opacity: 0.3;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 30%, black 70%, transparent 100%);
+  }
+
+  .hero-meta {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 32px;
+    display: flex;
+    gap: 24px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-meta .tag {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    color: var(--dim);
+  }
+
+  .hero-meta .tag-red {
+    border-color: var(--red-dim);
+    color: var(--red);
+  }
+
+  .hero-title {
+    font-family: var(--display);
+    font-size: clamp(72px, 14vw, 180px);
+    line-height: 0.88;
+    letter-spacing: 0.02em;
+    color: var(--white);
+    position: relative;
+    z-index: 1;
+    margin-bottom: 8px;
+  }
+
+  .hero-title .zero {
+    color: var(--red);
+    position: relative;
+    display: inline-block;
+  }
+
+  .hero-title .zero::after {
+    content: 'ZERO';
+    position: absolute;
+    left: 3px; top: 3px;
+    color: var(--red-dim);
+    z-index: -1;
+  }
+
+  .hero-subtitle {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-bottom: 48px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .hero-bottom {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    position: relative;
+    z-index: 1;
+    flex-wrap: wrap;
+    gap: 32px;
+  }
+
+  .hero-desc {
+    max-width: 480px;
+    color: var(--dim);
+    font-size: 15px;
+    line-height: 1.8;
+    border-left: 2px solid var(--red);
+    padding-left: 20px;
+  }
+
+  .hero-cta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+  }
+
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--red);
+    color: var(--white);
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 16px 32px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .btn-primary::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%; width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.4s;
+  }
+
+  .btn-primary:hover::before { left: 100%; }
+  .btn-primary:hover { background: #c02828; }
+  .btn-primary:active { transform: scale(0.98); }
+
+  .btn-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 12px 20px;
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .btn-ghost:hover {
+    border-color: var(--muted);
+    color: var(--text);
+  }
+
+  .scroll-hint {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    position: absolute;
+    bottom: 80px;
+    right: 40px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    z-index: 1;
+  }
+
+  .scroll-line {
+    width: 1px; height: 40px;
+    background: linear-gradient(to bottom, var(--red), transparent);
+    animation: scrollDown 2s infinite;
+  }
+
+  @keyframes scrollDown {
+    0% { transform: scaleY(0); transform-origin: top; }
+    50% { transform: scaleY(1); transform-origin: top; }
+    51% { transform: scaleY(1); transform-origin: bottom; }
+    100% { transform: scaleY(0); transform-origin: bottom; }
+  }
+
+  /* ─── SECTION LAYOUT ─── */
+  section {
+    padding: 100px 40px;
+    border-bottom: 1px solid var(--border);
+    position: relative;
+  }
+
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .section-label::before {
+    content: '';
+    width: 24px; height: 1px;
+    background: var(--red);
+  }
+
+  .section-title {
+    font-family: var(--display);
+    font-size: clamp(40px, 6vw, 80px);
+    line-height: 0.95;
+    color: var(--white);
+    letter-spacing: 0.03em;
+    margin-bottom: 48px;
+  }
+
+  /* ─── STATS / PROBLEM ─── */
+  .problem {
+    background: var(--deep);
+  }
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    margin-bottom: 60px;
+  }
+
+  .stat-cell {
+    background: var(--deep);
+    padding: 36px 28px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .stat-cell::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--red);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.6s;
+  }
+
+  .stat-cell:hover::before { transform: scaleX(1); }
+
+  .stat-value {
+    font-family: var(--display);
+    font-size: 64px;
+    line-height: 1;
+    color: var(--white);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+  }
+
+  .stat-value span { color: var(--red); font-size: 36px; }
+  .stat-label { font-family: var(--mono); font-size: 11px; color: var(--dim); letter-spacing: 0.15em; text-transform: uppercase; }
+
+  .problem-text {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: start;
+  }
+
+  .problem-quote {
+    font-family: var(--display);
+    font-size: clamp(24px, 3vw, 36px);
+    line-height: 1.1;
+    color: var(--bright);
+    letter-spacing: 0.03em;
+  }
+
+  .problem-quote .highlight { color: var(--red); }
+
+  .problem-body {
+    color: var(--dim);
+    font-size: 15px;
+    line-height: 1.9;
+  }
+
+  .problem-body p + p { margin-top: 16px; }
+
+  /* ─── CHAOS SOURCES ─── */
+  .chaos-sources {
+    margin-top: 60px;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .chaos-item {
+    background: var(--black);
+    padding: 28px 32px;
+    display: grid;
+    grid-template-columns: 40px 1fr;
+    gap: 24px;
+    align-items: start;
+    transition: background 0.2s;
+  }
+
+  .chaos-item:hover { background: var(--deep); }
+
+  .chaos-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--red);
+    padding-top: 2px;
+  }
+
+  .chaos-title {
+    font-family: var(--body);
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--bright);
+    margin-bottom: 6px;
+  }
+
+  .chaos-body { font-size: 14px; color: var(--dim); }
+
+  /* ─── SYSTEM SECTION ─── */
+  .system { background: var(--black); }
+
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    margin-top: 16px;
+  }
+
+  .tool-card {
+    background: var(--black);
+    padding: 44px 36px;
+    position: relative;
+    transition: background 0.3s;
+    overflow: hidden;
+  }
+
+  .tool-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid transparent;
+    transition: border-color 0.3s;
+    pointer-events: none;
+  }
+
+  .tool-card:hover { background: var(--deep); }
+  .tool-card:hover::after { border-color: var(--red-dim); }
+
+  .tool-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tool-num::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .tool-title {
+    font-family: var(--display);
+    font-size: 28px;
+    color: var(--white);
+    letter-spacing: 0.05em;
+    margin-bottom: 16px;
+  }
+
+  .tool-desc {
+    font-size: 14px;
+    color: var(--dim);
+    line-height: 1.8;
+    margin-bottom: 28px;
+  }
+
+  .tool-items {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tool-item {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--dim);
+    padding: 10px 14px;
+    background: var(--surface);
+    border-left: 2px solid transparent;
+    transition: border-color 0.2s, color 0.2s;
+  }
+
+  .tool-item:hover {
+    border-left-color: var(--red);
+    color: var(--text);
+  }
+
+  .tool-item .item-tag {
+    color: var(--red);
+    font-size: 10px;
+    min-width: 20px;
+  }
+
+  /* ─── TRIADA ─── */
+  .triada { background: var(--deep); }
+
+  .triada-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 60px;
+    align-items: center;
+  }
+
+  .triada-visual {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .triada-step {
+    background: var(--black);
+    padding: 32px 28px;
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    transition: background 0.2s;
+    cursor: default;
+  }
+
+  .triada-step:hover { background: var(--surface); }
+
+  .triada-icon {
+    width: 36px; height: 36px;
+    border: 1px solid var(--red-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--mono); font-size: 11px;
+    color: var(--red);
+    flex-shrink: 0;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .triada-step:hover .triada-icon {
+    background: var(--red-dim);
+    border-color: var(--red);
+  }
+
+  .triada-step-title { font-size: 14px; font-weight: 500; color: var(--bright); margin-bottom: 4px; }
+  .triada-step-desc { font-size: 13px; color: var(--dim); }
+
+  .triada-content { }
+
+  .triada-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .triada-label::before { content: ''; width: 24px; height: 1px; background: var(--red); }
+
+  .triada-heading {
+    font-family: var(--display);
+    font-size: clamp(36px, 5vw, 64px);
+    line-height: 0.95;
+    color: var(--white);
+    letter-spacing: 0.03em;
+    margin-bottom: 28px;
+  }
+
+  .triada-text { font-size: 14px; color: var(--dim); line-height: 1.9; }
+  .triada-text p + p { margin-top: 14px; }
+
+  .triada-quote {
+    margin-top: 32px;
+    padding: 20px 24px;
+    border-left: 3px solid var(--red);
+    background: rgba(224,48,48,0.04);
+    font-family: var(--mono);
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  /* ─── 5 FUNDAMENTÓW ─── */
+  .fundamenty { background: var(--black); }
+
+  .fund-list {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1px;
+    background: var(--border);
+    counter-reset: fund;
+  }
+
+  .fund-item {
+    background: var(--black);
+    padding: 36px 44px;
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 32px;
+    align-items: center;
+    transition: background 0.2s;
+    counter-increment: fund;
+  }
+
+  .fund-item:hover { background: var(--deep); }
+
+  .fund-num {
+    font-family: var(--display);
+    font-size: 56px;
+    color: var(--border);
+    line-height: 1;
+    transition: color 0.2s;
+    user-select: none;
+  }
+
+  .fund-item:hover .fund-num { color: var(--red-dim); }
+
+  .fund-title {
+    font-family: var(--body);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--red);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    font-family: var(--mono);
+    font-size: 11px;
+  }
+
+  .fund-text {
+    font-size: 15px;
+    color: var(--bright);
+    font-weight: 300;
+  }
+
+  /* ─── AUTHOR / CTA ─── */
+  .cta-section { background: var(--deep); }
+
+  .cta-inner {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: end;
+  }
+
+  .author-block { }
+
+  .author-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .author-name {
+    font-family: var(--display);
+    font-size: 48px;
+    color: var(--white);
+    letter-spacing: 0.05em;
+    margin-bottom: 20px;
+  }
+
+  .author-text {
+    font-size: 14px;
+    color: var(--dim);
+    line-height: 1.9;
+    max-width: 400px;
+  }
+
+  .author-sig {
+    margin-top: 32px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .sig-line {
+    width: 48px; height: 1px;
+    background: var(--red);
+  }
+
+  .sig-text {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  .cta-box {
+    border: 1px solid var(--border);
+    padding: 48px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cta-box::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--red), var(--red-dim), transparent);
+  }
+
+  .cta-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--red);
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+  }
+
+  .cta-headline {
+    font-family: var(--display);
+    font-size: 36px;
+    color: var(--white);
+    letter-spacing: 0.03em;
+    line-height: 1.05;
+    margin-bottom: 20px;
+  }
+
+  .cta-sub {
+    font-size: 14px;
+    color: var(--dim);
+    line-height: 1.8;
+    margin-bottom: 36px;
+  }
+
+  .cta-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .cta-note {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-top: 12px;
+  }
+
+  /* ─── FOOTER ─── */
+  footer {
+    padding: 32px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+  }
+
+  .footer-logo {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+
+  .footer-logo span { color: var(--red); }
+
+  .footer-meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    display: flex;
+    gap: 24px;
+  }
+
+  /* ─── ANIMATIONS ─── */
+  .reveal {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.7s ease, transform 0.7s ease;
+  }
+
+  .reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+
+  /* ─── TERMINAL BLINK ─── */
+  .blink {
+    animation: blink 1.1s step-end infinite;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* ─── CODE LINE ─── */
+  .code-line {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+    padding: 8px 16px;
+    background: var(--surface);
+    border-left: 2px solid var(--border);
+    margin-bottom: 8px;
+  }
+
+  .code-line .key { color: var(--red); }
+  .code-line .val { color: var(--bright); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    nav { padding: 14px 20px; }
+    .hero { padding: 0 20px 60px; }
+    section { padding: 70px 20px; }
+    .problem-text { grid-template-columns: 1fr; gap: 32px; }
+    .triada-grid { grid-template-columns: 1fr; gap: 40px; }
+    .cta-inner { grid-template-columns: 1fr; gap: 48px; }
+    .fund-item { grid-template-columns: 60px 1fr; gap: 20px; padding: 24px 20px; }
+    footer { flex-direction: column; gap: 16px; text-align: center; }
+    .hero-bottom { flex-direction: column; align-items: flex-start; }
+    .hero-cta { align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo"><span>PROTOKÓŁ</span> ZERO // ROB VELD</div>
+  <div class="nav-status">
+    <div class="status-dot"></div>
+    STATUS: OPERACYJNY // V.1.0.25
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+
+  <div class="hero-meta">
+    <span class="tag">AKT I</span>
+    <span class="tag tag-red">ANATOMIA UPADKU</span>
+    <span class="tag">UNPRINTED.PL</span>
+  </div>
+
+  <h1 class="hero-title">
+    PROTOKÓŁ<br><span class="zero">ZERO</span>
+  </h1>
+
+  <div class="hero-subtitle">40 DNI MGŁY — SYSTEM ODZYSKIWANIA KONTROLI<span class="blink">_</span></div>
+
+  <div class="hero-bottom">
+    <p class="hero-desc">
+      Nie ma tu motywacyjnego bełkotu. Tylko diagnoza, narzędzia i egzekucja. Dla tych, którzy stoją w miejscu i wiedzą, że coś musi się zmienić — <em>dziś</em>.
+    </p>
+    <div class="hero-cta">
+      <a href="#system" class="btn-primary">↓ WEJDŹ DO PROTOKOŁU</a>
+      <a href="#fundamenty" class="btn-ghost">05 FUNDAMENTÓW →</a>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>SCROLL</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- PROBLEM -->
+<section class="problem" id="problem">
+  <div class="container">
+    <div class="section-label reveal">DIAGNOZA STARTOWA</div>
+    <h2 class="section-title reveal reveal-delay-1">TWÓJ<br>ŚREDNI DZIEŃ</h2>
+
+    <div class="stats-grid">
+      <div class="stat-cell reveal">
+        <div class="stat-value">4<span>h 47</span></div>
+        <div class="stat-label">min. ekran telefonu / dzień</div>
+      </div>
+      <div class="stat-cell reveal reveal-delay-1">
+        <div class="stat-value">33<span>h</span></div>
+        <div class="stat-label">tygodniowo — pełen etat na nic</div>
+      </div>
+      <div class="stat-cell reveal reveal-delay-2">
+        <div class="stat-value">30<span>min</span></div>
+        <div class="stat-label">realnej pracy na 6 godzin</div>
+      </div>
+      <div class="stat-cell reveal reveal-delay-3">
+        <div class="stat-value">0<span>%</span></div>
+        <div class="stat-label">ukończonych projektów po 40 dniach</div>
+      </div>
+    </div>
+
+    <div class="problem-text">
+      <div class="problem-quote reveal">
+        Chaos to nie jest brak czasu.<br>
+        Chaos to <span class="highlight">rak, który zżera</span> system od środka.
+      </div>
+      <div class="problem-body reveal reveal-delay-1">
+        <p>Pierwszy miesiąc bez pracy to pułapka. Myślisz, że podbijesz świat, nauczysz się Pythona i przebiegniesz maraton.</p>
+        <p>Zacząłem ambitnie. Lista zadań była dłuższa niż moja cierpliwość. Efekt po 40 dniach? Zacząłem wszystko. Skończyłem nic.</p>
+        <p>Nie potrzebowałem motywacyjnego kopa. Potrzebowałem <strong>egzorcyzmu</strong>.</p>
+      </div>
+    </div>
+
+    <div class="chaos-sources reveal">
+      <div class="chaos-item">
+        <span class="chaos-num">01</span>
+        <div>
+          <div class="chaos-title">Kultura Instant — Dopamina na żądanie</div>
+          <div class="chaos-body">Wszystko ma być TERAZ. Trenujesz swój mózg jak psa Pawłowa. Efekt? Uwaga płytka jak kałuża.</div>
+        </div>
+      </div>
+      <div class="chaos-item">
+        <span class="chaos-num">02</span>
+        <div>
+          <div class="chaos-title">Mit Multitaskingu — Podatek od uwagi</div>
+          <div class="chaos-body">Każde przełączenie kosztuje 23 minuty skupienia. Przełączasz się 10 razy? Właśnie wyrzuciłeś pół dnia.</div>
+        </div>
+      </div>
+      <div class="chaos-item">
+        <span class="chaos-num">03</span>
+        <div>
+          <div class="chaos-title">Architektura Rozproszenia</div>
+          <div class="chaos-body">To miliardy dolarów wydane na algorytmy, które mają cię uwięzić. Zostałeś zhakowany. Czas odzyskać kody.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SYSTEM - 3 NARZĘDZIA -->
+<section class="system" id="system">
+  <div class="container">
+    <div class="section-label reveal">ETAP 2: NARZĘDZIA KRYTYCZNE</div>
+    <h2 class="section-title reveal reveal-delay-1">TRZY<br>NARZĘDZIA</h2>
+
+    <div class="tools-grid">
+      <div class="tool-card reveal">
+        <div class="tool-num">NARZĘDZIE #01</div>
+        <div class="tool-title">SYSTEM 1-3-5</div>
+        <div class="tool-desc">Zapomnij o kombajnach do produktywności. Potrzebujesz systemu, który nie padnie, gdy zabraknie Wi-Fi.</div>
+        <div class="tool-items">
+          <div class="tool-item">
+            <span class="item-tag">[1]</span>
+            PRIORYTET NIEZBĘDNY — jedno zadanie kluczowe. Reszta dnia to bonus.
+          </div>
+          <div class="tool-item">
+            <span class="item-tag">[3]</span>
+            OPERACJE WSPOMAGAJĄCE — tylko gdy „jedynka" jest odhaczona.
+          </div>
+          <div class="tool-item">
+            <span class="item-tag">[5]</span>
+            DROBNE OPERACJE — bonusy na dni, gdy wszystko idzie nadspodziewanie dobrze.
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-card reveal reveal-delay-1">
+        <div class="tool-num">NARZĘDZIE #02</div>
+        <div class="tool-title">BUFOR 60/40</div>
+        <div class="tool-desc">Plan bez marginesu na błąd to prosta droga do sabotażu. Przestań planować 100% czasu.</div>
+        <div class="tool-items">
+          <div class="tool-item">
+            <span class="item-tag">60%</span>
+            ZADANIA OPERACYJNE — twoje 1-3-5. Egzekucja.
+          </div>
+          <div class="tool-item">
+            <span class="item-tag">40%</span>
+            BUFOR — czas na życie, błędy i nieprzewidziane ataki chaosu.
+          </div>
+          <div class="tool-item">
+            <span class="item-tag">0%</span>
+            WYRZUTÓW SUMIENIA — bufor to nie lenistwo. To matematyka spokoju.
+          </div>
+        </div>
+      </div>
+
+      <div class="tool-card reveal reveal-delay-2">
+        <div class="tool-num">NARZĘDZIE #03</div>
+        <div class="tool-title">3 PYTANIA</div>
+        <div class="tool-desc">Jeśli wszystko jest ważne — nic nie jest. Przed każdym zadaniem: brutalne przesłuchanie.</div>
+        <div class="tool-items">
+          <div class="tool-item">
+            <span class="item-tag">P1</span>
+            Czy to przybliża mnie do celu?
+          </div>
+          <div class="tool-item">
+            <span class="item-tag">P2</span>
+            Czy to musi zostać zrobione DZIŚ?
+          </div>
+          <div class="tool-item">
+            <span class="item-tag">P3</span>
+            Czy to mój jedyny priorytet — czy uciekam od czegoś trudniejszego?
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 60px;" class="reveal">
+      <div class="code-line"><span class="key">ARCHITEKTURA DNIA: </span><span class="val">07:00 PRIORYTET → 09:00 BUFOR → 10:00 ROZWÓJ → 12:00 RESET → 14:00 LOGISTYKA → 16:00 ŻYCIE</span></div>
+      <div class="code-line"><span class="key">DOKTRYNA: </span><span class="val">Jeśli zrobisz tylko „1" — wygrałeś ten dzień. Reszta to opcjonalne trofea.</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- TRIADA -->
+<section class="triada" id="triada">
+  <div class="container">
+    <div class="triada-grid">
+      <div class="triada-visual reveal">
+        <div class="triada-step">
+          <div class="triada-icon">01</div>
+          <div>
+            <div class="triada-step-title">OPERACJA MINIMUM</div>
+            <div class="triada-step-desc">15 minut. Najmniejsza, najbardziej banalna rzecz z listy. Nie analizuj. Wykonaj.</div>
+          </div>
+        </div>
+        <div class="triada-step">
+          <div class="triada-icon">02</div>
+          <div>
+            <div class="triada-step-title">RESET SYSTEMU</div>
+            <div class="triada-step-desc">5 minut. Wyjdź na zewnątrz. 10 głębokich oddechów. Zmień stan fizycznie — nie tylko mentalnie.</div>
+          </div>
+        </div>
+        <div class="triada-step">
+          <div class="triada-icon">03</div>
+          <div>
+            <div class="triada-step-title">ARCHIWIZACJA NA JUTRO</div>
+            <div class="triada-step-desc">Zanim zamkniesz oczy — zapisz 3 małe kroki. Twój most do lepszego jutra.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="triada-content reveal reveal-delay-1">
+        <div class="triada-label">AKT III: WYJŚCIE AWARYJNE</div>
+        <div class="triada-heading">TRIADA<br>RATUNKOWA</div>
+        <div class="triada-text">
+          <p>Są dni, kiedy system 1-3-5 to żart. Złe wiadomości, brak snu, dno psychiczne.</p>
+          <p>Wtedy nie potrzebujesz planu. Potrzebujesz protokołu przetrwania. Triada to absolutne minimum, które trzyma cię przy życiu, gdy wszystko inne zawodzi.</p>
+        </div>
+        <div class="triada-quote">
+          „Dostałem maila: Wybraliśmy innego kandydata. Stary ja? Przeleżałbym resztę dnia przed Netflixem. Zamiast tego odpaliłem Triadę. Dzień nadal był do niczego — ale ciągłość została zachowana."<br><br>
+          — ROB VELD
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 5 FUNDAMENTÓW -->
+<section class="fundamenty" id="fundamenty">
+  <div class="container">
+    <div class="section-label reveal">ZAKOŃCZENIE</div>
+    <h2 class="section-title reveal reveal-delay-1">5 FUNDAMENTÓW<br>PROTOKOŁU</h2>
+
+    <div class="fund-list">
+      <div class="fund-item reveal">
+        <div class="fund-num">01</div>
+        <div>
+          <div class="fund-title">CHAOS TO BRAK FILTRA</div>
+          <div class="fund-text">Nie brakuje ci czasu. Brakuje ci odwagi, by odrzucić to, co zbędne.</div>
+        </div>
+      </div>
+      <div class="fund-item reveal reveal-delay-1">
+        <div class="fund-num">02</div>
+        <div>
+          <div class="fund-title">CIĄGŁOŚĆ BIJE INTENSYWNOŚĆ</div>
+          <div class="fund-text">Jeden krok codziennie znaczy więcej niż sprint raz w miesiącu. Zawsze.</div>
+        </div>
+      </div>
+      <div class="fund-item reveal reveal-delay-2">
+        <div class="fund-num">03</div>
+        <div>
+          <div class="fund-title">TRIADA TO TWOJA KAMIZELKA KULOODPORNA</div>
+          <div class="fund-text">Używaj jej zawsze, gdy życie zaczyna strzelać. Bez wyjątków.</div>
+        </div>
+      </div>
+      <div class="fund-item reveal reveal-delay-3">
+        <div class="fund-num">04</div>
+        <div>
+          <div class="fund-title">PODMIANA, NIE WALKA</div>
+          <div class="fund-text">Nawyku nie da się usunąć. Można go tylko nadpisać nowym kodem.</div>
+        </div>
+      </div>
+      <div class="fund-item reveal reveal-delay-4">
+        <div class="fund-num">05</div>
+        <div>
+          <div class="fund-title">PROSTOTA TO PRZETRWANIE</div>
+          <div class="fund-text">Jeśli system jest skomplikowany — padnie przy pierwszym kryzysie.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+  <div class="container">
+    <div class="cta-inner">
+      <div class="author-block reveal">
+        <div class="author-label">AUTOR PROTOKOŁU</div>
+        <div class="author-name">ROB VELD</div>
+        <div class="author-text">
+          Protokół Zero to nie teoria zarządzania. To osobista mapa z dna kryzysu. Każde narzędzie było testowane w warunkach, w których nic innego nie działało. Ciągłość bije intensywność. Zawsze.
+        </div>
+        <div class="author-sig">
+          <div class="sig-line"></div>
+          <div class="sig-text">UNPRINTED.PL © 2025</div>
+        </div>
+      </div>
+
+      <div class="cta-box reveal reveal-delay-1">
+        <div class="cta-label">PYTANIE OSTATECZNE</div>
+        <div class="cta-headline">CO ZROBISZ JUTRO,<br>BY NIE COFNĄĆ SIĘ?</div>
+        <div class="cta-sub">Nie czekaj na poniedziałek. Poniedziałek to kłamstwo prokrastynacji. Twój Protokół Zero zaczyna się w tej sekundzie.</div>
+        <div class="cta-actions">
+          <a href="#" class="btn-primary">↓ POBIERZ PROTOKÓŁ ZERO</a>
+          <a href="#problem" class="btn-ghost">← WRÓĆ DO DIAGNOZY</a>
+        </div>
+        <div class="cta-note">WERSJA 1.0.25 // AKT I: ANATOMIA UPADKU // UNPRINTED.PL</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-logo"><span>PROTOKÓŁ</span> ZERO — ROB VELD</div>
+  <div class="footer-meta">
+    <span>UNPRINTED.PL</span>
+    <span>© 2025</span>
+    <span>V.1.0.25</span>
+  </div>
+</footer>
+
+<script>
+  // Reveal on scroll
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+      }
+    });
+  }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+  document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+  // Animated counters for stats
+  function animateCounter(el) {
+    const target = parseFloat(el.textContent.replace(',', '.'));
+    const isFloat = String(target).includes('.');
+    let start = 0;
+    const duration = 1200;
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      const progress = Math.min((timestamp - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = target * eased;
+      el.textContent = isFloat ? current.toFixed(0) : Math.floor(current);
+      if (progress < 1) requestAnimationFrame(step);
+      else el.textContent = isFloat ? target : Math.floor(target);
+    };
+    requestAnimationFrame(step);
+  }
+
+  const counterObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const valueEl = entry.target.querySelector('.stat-value');
+        if (valueEl) {
+          const numEl = document.createElement('span');
+          const big = valueEl.firstChild.textContent.trim();
+          const sub = valueEl.querySelector('span');
+          valueEl.firstChild.nodeType === 3 && animateCounter(valueEl.firstChild.parentNode.firstChild.nodeType === 3 ? { textContent: big, textNodeParent: valueEl } : valueEl);
+        }
+        counterObserver.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+
+  document.querySelectorAll('.stat-cell').forEach(el => counterObserver.observe(el));
+</script>
+</body>
+</html>
