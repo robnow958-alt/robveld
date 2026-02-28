@@ -890,7 +890,7 @@
 /* ─── HERO COVER IMAGE ─── */
 .hero-cover {
   position: absolute;
-  right: 5%;
+  right: 12%;  /* ZMIANA: było 5% - teraz dalej od krawędzi */
   top: 35%;
   transform: translateY(-50%);
   width: 240px;
@@ -905,19 +905,70 @@
 .cover-glow {
   position: absolute;
   inset: -40px;
-  background: radial-gradient(circle, rgba(224,48,48,0.2) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(224,48,48,0.25) 0%, transparent 70%);
   z-index: -1;
-  filter: blur(50px);
-  animation: glow-pulse 3s ease-in-out infinite;
+  filter: blur(60px);
+  animation: glow-pulse 2s ease-in-out infinite;
 }
 
 @keyframes glow-pulse {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
+  0%, 100% { 
+    opacity: 0.4; 
+    transform: scale(0.95);
+  }
+  50% { 
+    opacity: 0.9; 
+    transform: scale(1.05);
+  }
 }
 
 .cover-img {
   width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 40px 80px rgba(0,0,0,0.9)) 
+          drop-shadow(0 0 30px rgba(224,48,48,0.4));
+  transform: perspective(800px) rotateY(-35deg) rotateX(8deg) rotateZ(-2deg);
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+  animation: cover-float 4s ease-in-out infinite;
+}
+
+@keyframes cover-float {
+  0%, 100% { 
+    transform: perspective(800px) rotateY(-35deg) rotateX(8deg) rotateZ(-2deg) translateY(0);
+  }
+  50% { 
+    transform: perspective(800px) rotateY(-35deg) rotateX(8deg) rotateZ(-2deg) translateY(-10px);
+  }
+}
+
+.hero-cover:hover .cover-img {
+  transform: perspective(800px) rotateY(-15deg) rotateX(0deg) rotateZ(0deg) scale(1.08);
+  animation: none;
+}
+
+@media (max-width: 1024px) {
+  .hero-cover {
+    position: relative;
+    right: auto;
+    top: auto;
+    transform: none;
+    width: 200px;
+    height: 300px;
+    margin: 40px auto 0;
+  }
+  .hero-bottom {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  .hero-desc {
+    border-left: none;
+    padding-left: 0;
+    border-bottom: 2px solid var(--red);
+    padding-bottom: 20px;
+  }
+}
   height: 100%;
   object-fit: contain;
   filter: drop-shadow(0 40px 80px rgba(0,0,0,0.9)) 
